@@ -1,0 +1,42 @@
+from pymongo import MongoClient
+client = MongoClient("mongodb://127.0.0.1:27017")
+client.list_database_names()
+db = client.socialmediahub
+db.list_collection_names()
+collection = db.user_collection
+cursor = collection.find()
+print(next(cursor))
+
+def rename_database(client, old_db_name, new_db_name):
+    """
+    Renames a MongoDB database by copying all collections from the old database
+    to a new database and then dropping the old one.
+    
+    Args:
+    - client: MongoClient instance connected to MongoDB.
+    - old_db_name: The name of the database to be renamed.
+    - new_db_name: The new name for the database.
+    
+    Returns:
+    - None
+    """
+    # Access the old and new databases
+    old_db = client[old_db_name]
+    new_db = client[new_db_name]
+    
+    # Copy all collections from the old database to the new one
+    for collection_name in old_db.list_collection_names():
+        old_collection = old_db[collection_name]
+        new_collection = new_db[collection_name]
+        
+        # Insert all documents from old collection into the new one
+        new_collection.insert_many(old_collection.find())
+    
+    # Drop the old database
+    client.drop_database(old_db_name)
+    
+    print(f"Database renamed from '{old_db_name}' to '{new_db_name}'")
+
+# Example usage
+client = MongoClient("mongodb://127.0.0.1:27017")
+rename_database(client, "old_database_name", "new_database_name")
